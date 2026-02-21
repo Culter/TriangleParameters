@@ -1,0 +1,47 @@
+\documentclass[11pt]{amsart}
+\usepackage{geometry}                % See geometry.pdf to learn the layout options. There are lots.
+\geometry{letterpaper}                   % ... or a4paper or a5paper or ... 
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{epstopdf}
+\usepackage{tikz-cd}
+\usepackage[dvipsnames]{xcolor} % dvipsnames provides ForestGreen
+
+\title{Who needs a title?}
+\author{Chris Culter}
+% \date{}
+
+\newtheorem{problem}{Problem}
+
+% Blackboard bold symbols
+\def\C{\mathbb{C}}
+\def\N{\mathbb{N}}
+\def\Q{\mathbb{Q}}
+\def\R{\mathbb{R}}
+\def\S{\mathbb{S}}
+\def\Z{\mathbb{Z}}
+\def\T{\mathbb{T}}
+
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+
+\DeclareMathOperator*{\argbar}{\bar{a}rg}
+
+\DeclareMathOperator*{\Conv}{Conv}
+\DeclareMathOperator*{\interior}{int}
+
+\begin{document}
+
+\maketitle
+
+\begin{equation}
+    T(a,b) = \begin{cases}
+        (a, b-a), &a<b \\
+        % vec2(1.0 - p.x - p.y, p.x - p.y)
+        (1 - a - b, a - b), &a>b
+        \end{cases}
+\end{equation}
+
+\end{document}
