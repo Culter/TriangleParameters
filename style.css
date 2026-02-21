@@ -9,6 +9,19 @@ canvas#gl, canvas#overlay {
   display: block;
 }
 label { display: flex; gap: 8px; align-items: center; }
+label.iters {
+  display: grid;
+  grid-template-columns: auto 3ch 1fr;
+  gap: 8px;
+  align-items: center;
+}
+label.iters .readout {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+label.iters input[type="range"] {
+  width: 100%;
+}
 input[type="range"] { width: 260px; }
 button, select { background: #222; color: #ddd; border: 1px solid #333; padding: 6px 10px; }
 button:hover { border-color: #666; cursor: pointer; }
