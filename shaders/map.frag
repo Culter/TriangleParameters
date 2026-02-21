@@ -55,6 +55,39 @@ vec3 paletteEdge(float d) {
   return vec3(t);
 }
 
+float softNormalize(float n) {
+    return n / (n + 2.0);
+}
+
+float softScale(float n, float max) {
+    float normalized = softNormalize(n);
+    float scale = softNormalize(max + 1.0);
+    return normalized / scale;
+}
+
+vec3 lerp01(vec3 a, vec3 b, float p) {
+    return p * b + (1.0-p) * a;
+}
+
+vec3 lerp(vec3 a, vec3 b, float p, float p1, float p2) {
+    return lerp01(a, b, (p-p1)/(p2-p1));
+}
+
+vec3 getColorVector(float x) {
+    x = mod(x, 1.0);
+    if (x < 1.0/3.0) {
+        return lerp(vec3(1.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0), x, 0.0, 1.0/3.0);
+    } else if (x < 2.0/3.0) {
+        return lerp(vec3(0.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0), x, 1.0/3.0, 2.0/3.0);
+    } else {
+        return lerp(vec3(0.0, 0.0, 1.0), vec3(1.0, 0.0, 0.0), x, 2.0/3.0, 1.0);
+    }
+}
+
+vec3 getColorBasis(int n) {
+    return getColorVector(float(n) * 0.618033988749895);
+}
+
 void main() {
   // Screen -> centered coords -> world coords
   vec2 aspect = vec2(u_resolution.x / u_resolution.y, 1.0);
@@ -73,11 +106,28 @@ void main() {
   int symHash = 0;
   float minEdgeDist = 1e9;
 
+  vec3 firstReturnColor = vec3(1.0, 1.0, 1.0);
+  int numConsecutiveShears = 0;
+  int numExpansions = 0;
+
   for (int i = 0; i < 2000; i++) { // hard cap; actual steps controlled by u_iters
-    if (i >= u_iters) break;
+    if (i >= u_iters) {
+        if (numConsecutiveShears > 0) {
+            // Apply the accumulated shear color from previous loop iterations, since we'll never have another chance.
+            firstReturnColor -= getColorBasis(numExpansions) * softScale(float(numConsecutiveShears), float(u_iters));
+        }
+        break;
+    }
 
     bool s0 = inPiece0(p);
     symHash = (symHash * 1315423911) ^ (s0 ? 0x9e3779b9 : 0x7f4a7c15);
+    if (s0) {
+        numConsecutiveShears += 1;
+    } else {
+        firstReturnColor -= getColorBasis(numExpansions) * softScale(float(numConsecutiveShears), float(u_iters));
+        numExpansions += 1;
+        numConsecutiveShears = 0;
+    }
 
     p = s0 ? piece0(p) : piece1(p);
 
@@ -104,7 +154,7 @@ void main() {
     else if (dBC <= dAB && dBC <= dCA) col = vec3(0.2, 1.0, 0.2);
     else col = vec3(0.2, 0.2, 1.0);
 
-  } else {
+  } else if (u_colorMode == 2) {
     // symbolic hash → pseudo-color (works well for small N)
     // convert int hash-ish to floats
     uint h = uint(symHash);
@@ -112,6 +162,9 @@ void main() {
     float g = float((h >> 8 ) & 255u) / 255.0;
     float b = float((h >> 16) & 255u) / 255.0;
     col = vec3(r, g, b);
+
+  } else {
+    col = firstReturnColor;
   }
 
   outColor = vec4(col, 1.0);
