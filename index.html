@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Triangle Map Explorer</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header>
+    <div class="row">
+      <label>
+        Iterations: <span id="iterLabel">50</span>
+        <input id="iter" type="range" min="0" max="500" value="50" step="1" />
+      </label>
+
+      <label>
+        Color mode:
+        <select id="colorMode">
+          <option value="0">distance-to-edge</option>
+          <option value="1">which-edge-attracted</option>
+          <option value="2">symbolic-hash (small N)</option>
+        </select>
+      </label>
+
+      <button id="resetView">Reset view</button>
+      <button id="exportPng">Export PNG</button>
+    </div>
+
+    <div class="row small">
+      <span id="hover">hover: —</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- WebGL canvas -->
+    <canvas id="gl"></canvas>
+
+    <!-- Optional 2D overlay canvas (cycles, labels, triangle edges) -->
+    <canvas id="overlay"></canvas>
+  </main>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
