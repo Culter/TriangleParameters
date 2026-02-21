@@ -4,8 +4,12 @@
 View the interactive version here:
 https://culter.github.io/TriangleParameters/
 
-This WebGL2 shader iterates the following piecewise-linear map over the triangle a>0, b>0, a+b<1:
+This WebGL2 shader iterates the following piecewise-linear map over the triangle _a_>0, _b_>0, _a_+_b_<1:
 <img width="872" height="184" alt="image" src="https://github.com/user-attachments/assets/867a2c42-9b3e-4e38-91b6-0b661a8a6267" />
+
+This map models the action of the self-reflecting billiard on a triangle,
+where <span style="white-space: nowrap;">_a_(π/2)</span> is the (internal) opposite angle, which is acute,
+and <span style="white-space: nowrap;">(_b_+1)(π/2)</span> is the (internal) incident angle, which is obtuse.
 
 The recommended "first-return" color mode adds pigment for each run of shears, where the darkness of the pigment depends on the number of shears,
 and the hue depends on the number of area-doublings we're done so far.
