@@ -37,39 +37,16 @@ float distToLine(vec2 p, vec2 a, vec2 b) {
   return abs(cross2(ab, p - a)) / max(length(ab), 1e-12);
 }
 
-// Example: pick the "piece" by splitting triangle into two sub-triangles.
-// For a right triangle (A,B,C), a natural split is along the median from A to midpoint of BC.
-// Replace this logic with your true partition.
 bool inPiece0(vec2 p) {
-  vec2 mid = 0.5 * (B + C);
-  // Which side of line A->mid?
-  float s = cross2(mid - A, p - A);
-  // Choose sign convention that gives a half-triangle
-  return s >= 0.0;
+  return p.y > p.x;
 }
 
-// --- Your two affine pieces (PLACEHOLDERS)
-// Replace these with your actual shear and area-doubling affine maps on the triangle.
-// Keep them affine: p' = M*p + t.
 vec2 piece0(vec2 p) {
-  // shear placeholder
-  mat2 M = mat2(1.0, 0.6,
-                0.0, 1.0);
-  return M * p;
+  return vec2(p.x, p.y - p.x);
 }
 
 vec2 piece1(vec2 p) {
-  // area-doubling-ish placeholder (not guaranteed to map triangle to itself)
-  mat2 M = mat2(2.0, 0.0,
-                0.0, 1.0);
-  return M * p;
-}
-
-// Optional: fold back / project into triangle if your real dynamics requires it.
-// For many piecewise-linear maps on a fundamental domain, you apply an affine map then
-// mod / reflect / re-triangulate. Implement your true rule here.
-vec2 normalizeToDomain(vec2 p) {
-  return p;
+  return vec2(1.0 - p.x - p.y, p.x - p.y);
 }
 
 vec3 paletteEdge(float d) {
@@ -103,7 +80,6 @@ void main() {
     symHash = (symHash * 1315423911) ^ (s0 ? 0x9e3779b9 : 0x7f4a7c15);
 
     p = s0 ? piece0(p) : piece1(p);
-    p = normalizeToDomain(p);
 
     // Track how close we get to edges
     float dAB = distToLine(p, A, B);
