@@ -11,6 +11,16 @@ uniform int   u_colorMode;    // dropdown
 uniform vec2  u_pan;          // world pan
 uniform float u_zoom;         // world zoom (scale)
 uniform float u_time;         // optional animation
+uniform int   u_returnMode;
+uniform int   u_returnLimit;
+uniform int   u_domainLineCount;
+uniform vec3  u_domainLines[128];
+uniform int   u_colorWholeWord;
+uniform int   u_selectedWordLength;
+uniform highp usampler2D u_selectedWord;
+
+const int MAX_RETURN_ITERS = 16384;
+const int MAX_SELECTED_WORD = 16384;
 
 // --- Define your triangle in "world coords"
 const vec2 A = vec2(0.0, 0.0);
@@ -88,6 +98,31 @@ vec3 getColorBasis(int n) {
     return getColorVector(float(n) * 0.618033988749895);
 }
 
+bool inSelectedDomain(vec2 p) {
+  for (int i = 0; i < 128; i++) {
+    if (i >= u_domainLineCount) break;
+    vec3 line = u_domainLines[i];
+    if (dot(line.xy, p) + line.z < -1e-7) return false;
+  }
+  return true;
+}
+
+void accumulateMove(bool isShear, inout vec3 pigment, inout int shearRun, inout int expansions) {
+  if (isShear) {
+    shearRun += 1;
+  } else {
+    pigment += getColorBasis(expansions) * softNormalize(float(shearRun));
+    expansions += 1;
+    shearRun = 0;
+  }
+}
+
+vec3 finishWordColor(vec3 pigment, int shearRun, int expansions, int length) {
+  pigment += getColorBasis(expansions) * softNormalize(float(shearRun));
+  float scale = max(softNormalize(float(length + 1)), 1e-8);
+  return vec3(1.0) - pigment / scale;
+}
+
 void main() {
   // Screen -> centered coords -> world coords
   vec2 aspect = vec2(u_resolution.x / u_resolution.y, 1.0);
@@ -100,34 +135,69 @@ void main() {
     return;
   }
 
+  if (u_returnMode != 0) {
+    if (!inSelectedDomain(p0)) {
+      outColor = vec4(0.035, 0.035, 0.04, 1.0);
+      return;
+    }
+
+    vec2 returnPoint = p0;
+    vec3 pigment = vec3(0.0);
+    int shearRun = 0;
+    int expansions = 0;
+    int returnLength = 0;
+    bool returned = false;
+
+    for (int i = 0; i < MAX_RETURN_ITERS; i++) {
+      if (i >= u_returnLimit) break;
+      // S is chosen only for the strict inequality b > a; ties choose R.
+      bool isShear = inPiece0(returnPoint);
+      accumulateMove(isShear, pigment, shearRun, expansions);
+      returnPoint = isShear ? piece0(returnPoint) : piece1(returnPoint);
+      returnLength += 1;
+      if (inSelectedDomain(returnPoint)) {
+        returned = true;
+        break;
+      }
+    }
+
+    if (!returned) {
+      outColor = vec4(0.16, 0.16, 0.18, 1.0);
+      return;
+    }
+
+    int colorLength = returnLength;
+    if (u_colorWholeWord != 0) {
+      for (int i = 0; i < MAX_SELECTED_WORD; i++) {
+        if (i >= u_selectedWordLength) break;
+        bool isShear = texelFetch(u_selectedWord, ivec2(i, 0), 0).r != 0u;
+        accumulateMove(isShear, pigment, shearRun, expansions);
+      }
+      colorLength += u_selectedWordLength;
+    }
+
+    outColor = vec4(finishWordColor(pigment, shearRun, expansions, colorLength), 1.0);
+    return;
+  }
+
   vec2 p = p0;
 
   // Orbit stats
   int symHash = 0;
   float minEdgeDist = 1e9;
 
-  vec3 firstReturnColor = vec3(1.0, 1.0, 1.0);
+  vec3 pigment = vec3(0.0);
   int numConsecutiveShears = 0;
   int numExpansions = 0;
 
   for (int i = 0; i < 2000; i++) { // hard cap; actual steps controlled by u_iters
     if (i >= u_iters) {
-        if (numConsecutiveShears > 0) {
-            // Apply the accumulated shear color from previous loop iterations, since we'll never have another chance.
-            firstReturnColor -= getColorBasis(numExpansions) * softScale(float(numConsecutiveShears), float(u_iters));
-        }
         break;
     }
 
     bool s0 = inPiece0(p);
     symHash = (symHash * 1315423911) ^ (s0 ? 0x9e3779b9 : 0x7f4a7c15);
-    if (s0) {
-        numConsecutiveShears += 1;
-    } else {
-        firstReturnColor -= getColorBasis(numExpansions) * softScale(float(numConsecutiveShears), float(u_iters));
-        numExpansions += 1;
-        numConsecutiveShears = 0;
-    }
+    accumulateMove(s0, pigment, numConsecutiveShears, numExpansions);
 
     p = s0 ? piece0(p) : piece1(p);
 
@@ -164,7 +234,7 @@ void main() {
     col = vec3(r, g, b);
 
   } else {
-    col = firstReturnColor;
+    col = finishWordColor(pigment, numConsecutiveShears, numExpansions, u_iters);
   }
 
   outColor = vec4(col, 1.0);

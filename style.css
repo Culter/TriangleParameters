@@ -1,8 +1,15 @@
 html, body { height: 100%; margin: 0; background: #111; color: #ddd; }
+body { display: flex; flex-direction: column; font-family: system-ui, sans-serif; }
 header { padding: 10px 12px; border-bottom: 1px solid #2a2a2a; }
 .row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
-.row.small { margin-top: 6px; font-size: 12px; opacity: 0.9; }
-main { position: relative; height: calc(100% - 70px); }
+.row.small {
+  margin-top: 6px;
+  min-width: 0;
+  flex-wrap: nowrap;
+  font-size: 12px;
+  opacity: 0.9;
+}
+main { position: relative; flex: 1; min-height: 0; }
 canvas#gl, canvas#overlay {
   position: absolute; inset: 0;
   width: 100%; height: 100%;
@@ -25,5 +32,47 @@ label.iters input[type="range"] {
   width: 100%;
 }
 input[type="range"] { width: 400px; }
-button, select { background: #222; color: #ddd; border: 1px solid #333; padding: 6px 10px; }
+input[type="number"] { width: 7em; }
+button, select, input[type="number"] { background: #222; color: #ddd; border: 1px solid #333; padding: 6px 10px; }
 button:hover { border-color: #666; cursor: pointer; }
+button:disabled, select:disabled, input:disabled { opacity: 0.42; cursor: default; }
+[hidden] { display: none !important; }
+
+#mode { flex: 0 0 auto; color: #f3cf61; }
+#hover {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#detailsPanel {
+  position: absolute;
+  z-index: 3;
+  top: 12px;
+  right: 12px;
+  width: min(390px, calc(100% - 48px));
+  max-height: calc(100% - 48px);
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 210, 70, 0.5);
+  border-radius: 6px;
+  background: rgba(12, 12, 12, 0.88);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(3px);
+}
+#detailsPanel h2 { margin: 0 0 8px; font-size: 15px; }
+#cellDetails {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: 12px/1.45 ui-monospace, SFMono-Regular, Consolas, monospace;
+  color: #eee;
+}
+
+@media (max-width: 700px) {
+  label.iters { width: 100%; }
+  #detailsPanel { top: auto; bottom: 12px; max-height: 45%; }
+}

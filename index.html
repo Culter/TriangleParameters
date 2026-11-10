@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="en">
-    <!-- To test locally:
-     python -m http.server 8000
-     http://localhost:8000/
-     -->
+<!-- To test locally:
+  python -m http.server 8000
+  http://localhost:8000/
+-->
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -14,7 +14,7 @@
   <header>
     <div class="row">
       <label class="iters">
-        Iterations: <span id="iterLabel" class="readout">50</span>
+        Cell depth: <span id="iterLabel" class="readout">10</span>
         <input id="iter" type="range" min="0" max="100" value="10" step="1" />
       </label>
       <div class="lineBreak" aria-hidden="true"></div>
@@ -29,21 +29,35 @@
         </select>
       </label>
 
+      <label id="returnLimitControl" hidden>
+        Return search limit:
+        <input id="returnLimit" type="number" min="1" max="16384" value="2000" step="100" />
+      </label>
+
+      <label id="wholeWordControl" hidden>
+        <input id="wholeWordColor" type="checkbox" />
+        Color by the whole <var>wu</var> word
+      </label>
+
       <button id="resetView">Reset view</button>
+      <button id="backSelection" disabled>Back</button>
       <button id="exportPng">Export PNG</button>
     </div>
 
     <div class="row small">
+      <span id="mode">mode: fixed-depth cells</span>
       <span id="hover">hover: —</span>
     </div>
   </header>
 
   <main>
-    <!-- WebGL canvas -->
     <canvas id="gl"></canvas>
-
-    <!-- Optional 2D overlay canvas (cycles, labels, triangle edges) -->
     <canvas id="overlay"></canvas>
+
+    <aside id="detailsPanel" hidden>
+      <h2>Selected cell</h2>
+      <pre id="cellDetails"></pre>
+    </aside>
   </main>
 
   <script type="module" src="./src/main.js"></script>

@@ -4,7 +4,7 @@ export function initOverlay(canvas) {
 }
 
 // Convert world point -> screen pixel consistent with shader mapping
-function worldToScreen(p, canvas, state) {
+export function worldToScreen(p, canvas, state) {
   const W = canvas.width, H = canvas.height;
   const aspect = W / H;
 
@@ -38,6 +38,24 @@ export function drawOverlay(overlay, state) {
   ctx.closePath();
   ctx.stroke();
 
+  if (state.selectedCell) {
+    const polygon = state.selectedCell.polygon.map(vertex =>
+      worldToScreen([vertex.x.toNumber(), vertex.y.toNumber()], canvas, state));
+    ctx.save();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "rgba(255, 210, 70, 0.98)";
+    ctx.fillStyle = "rgba(255, 210, 70, 0.055)";
+    ctx.beginPath();
+    polygon.forEach((vertex, index) => {
+      if (index === 0) ctx.moveTo(vertex[0], vertex[1]);
+      else ctx.lineTo(vertex[0], vertex[1]);
+    });
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+
   // Cycle points (once you load them)
   ctx.fillStyle = "rgba(255,255,0,0.9)";
   for (const cyc of overlay.cycles) {
@@ -55,9 +73,7 @@ export function drawOverlay(overlay, state) {
   }
 }
 
-// Hover hook: for now, just report world coords under cursor.
-// Later: you can run the SAME map on CPU for that single point to show code, distances, etc.
-export function hitTestAtMouse(canvas, clientX, clientY, state) {
+export function screenToWorld(canvas, clientX, clientY, state) {
   const rect = canvas.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
   const x = (clientX - rect.left) * dpr;
@@ -75,5 +91,10 @@ export function hitTestAtMouse(canvas, clientX, clientY, state) {
   const worldX = (xyx / state.zoom) + state.panX;
   const worldY = (xyy / state.zoom) + state.panY;
 
+  return [worldX, worldY];
+}
+
+export function hitTestAtMouse(canvas, clientX, clientY, state) {
+  const [worldX, worldY] = screenToWorld(canvas, clientX, clientY, state);
   return `world: (${worldX.toFixed(6)}, ${worldY.toFixed(6)})`;
 }
