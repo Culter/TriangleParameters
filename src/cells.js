@@ -1,4 +1,5 @@
-import { Rational, rational, ZERO, ONE } from "./rational.js";
+// Keep this version synchronized with index.html and main.js when deploying coupled asset changes.
+import { Rational, rational, ZERO, ONE } from "./rational.js?v=20261109-1";
 
 const IDENTITY = [
   [1n, 0n, 0n],

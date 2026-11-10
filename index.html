@@ -8,7 +8,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Map Explorer</title>
-  <link rel="stylesheet" href="./style.css" />
+  <!-- Increment this asset version in index.html and src imports together. -->
+  <link rel="stylesheet" href="./style.css?v=20261109-1" />
 </head>
 <body>
   <header>
@@ -60,6 +61,14 @@
     </aside>
   </main>
 
-  <script type="module" src="./src/main.js"></script>
+  <script>
+    if (window.location.protocol === "file:") {
+      const message = "Chrome blocks this app's ES modules and shader files over file://. Serve this directory over HTTP (for example with VS Code's integrated server).";
+      const hover = document.getElementById("hover");
+      hover.textContent = message;
+      hover.title = message;
+    }
+  </script>
+  <script type="module" src="./src/main.js?v=20261109-1"></script>
 </body>
 </html>

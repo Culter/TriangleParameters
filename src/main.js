@@ -1,8 +1,9 @@
-import { createGL, createProgram, loadText, resizeCanvasToDisplaySize } from "./webgl.js";
-import { wireControls } from "./controls.js";
-import { initOverlay, drawOverlay, screenToWorld } from "./overlay.js";
-import { cellDetailsText, cellFromWord, lineToFloat } from "./cells.js";
-import { firstReturn, inOpenSimplex, itinerary, pointInHalfplanes } from "./dynamics.js";
+// Keep this version synchronized with index.html and cells.js when deploying coupled asset changes.
+import { createGL, createProgram, loadText, resizeCanvasToDisplaySize } from "./webgl.js?v=20261109-1";
+import { wireControls } from "./controls.js?v=20261109-1";
+import { initOverlay, drawOverlay, screenToWorld } from "./overlay.js?v=20261109-1";
+import { cellDetailsText, cellFromWord, lineToFloat } from "./cells.js?v=20261109-1";
+import { firstReturn, inOpenSimplex, itinerary, pointInHalfplanes } from "./dynamics.js?v=20261109-1";
 
 const MAX_DOMAIN_LINES = 128;
 
@@ -34,8 +35,8 @@ const detailsEl = document.getElementById("cellDetails");
 
 const gl = createGL(glCanvas);
 const [vertSrc, fragSrc] = await Promise.all([
-  loadText("./shaders/fullscreen.vert"),
-  loadText("./shaders/map.frag"),
+  loadText("./shaders/fullscreen.vert?v=20261109-1"),
+  loadText("./shaders/map.frag?v=20261109-1"),
 ]);
 const program = createProgram(gl, vertSrc, fragSrc);
 

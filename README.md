@@ -3,6 +3,11 @@
 View the interactive version here:
 https://culter.github.io/TriangleParameters/
 
+For local development, serve the repository over HTTP and open the resulting
+URL. Opening `index.html` directly as a `file://` URL does not work in Chrome,
+because browsers prohibit ES-module and shader `fetch()` requests from local
+files. VS Code's integrated server or `python -m http.server 8000` both work.
+
 This WebGL2 shader iterates the following piecewise-linear map over the triangle _a_>0, _b_>0, _a_+_b_<1:
 <img width="872" height="184" alt="image" src="https://github.com/user-attachments/assets/867a2c42-9b3e-4e38-91b6-0b661a8a6267" />
 

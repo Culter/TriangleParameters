@@ -1,6 +1,6 @@
-import { Rational } from "../src/rational.js";
-import { cellFromWord, formatInequality, lineToFloat } from "../src/cells.js";
-import { configurationMove, firstReturn, itinerary } from "../src/dynamics.js";
+import { Rational } from "../src/rational.js?v=20261109-1";
+import { cellFromWord, formatInequality, lineToFloat } from "../src/cells.js?v=20261109-1";
+import { configurationMove, firstReturn, itinerary } from "../src/dynamics.js?v=20261109-1";
 
 const result = document.getElementById("result");
 let assertions = 0;
