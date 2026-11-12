@@ -31,6 +31,13 @@ The interactive explorer also supports exact symbolic cells:
 Cell geometry is computed in the browser with exact `BigInt` rational
 arithmetic. WebGL receives floating-point half-planes only for rendering.
 
+The rational-points explorer classifies every displayed grid point exactly.
+For a fixed denominator `q`, the map acts directly on integer numerator pairs,
+so singular, periodic, and strictly pre-periodic orbits can be distinguished
+without floating-point comparisons. Denominators through `2^31 - 1` are
+accepted; only visible, pixel-resolvable grid squares are evaluated.
+The query string `?mode=rationals&q=21` opens this mode directly.
+
 To run the browser tests, serve the repository and open `tests/` alongside
 the main page. No package manager or build step is required.
 

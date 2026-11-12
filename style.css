@@ -31,6 +31,13 @@ label.iters .readout {
 label.iters input[type="range"] {
   width: 100%;
 }
+.denominator {
+  flex: 1 1 720px;
+}
+.denominator input[type="range"] {
+  flex: 1 1 400px;
+  min-width: 180px;
+}
 input[type="range"] { width: 400px; }
 input[type="number"] { width: 7em; }
 button, select, input[type="number"] { background: #222; color: #ddd; border: 1px solid #333; padding: 6px 10px; }
@@ -39,6 +46,11 @@ button:disabled, select:disabled, input:disabled { opacity: 0.42; cursor: defaul
 [hidden] { display: none !important; }
 
 #mode { flex: 0 0 auto; color: #f3cf61; }
+.warning {
+  flex: 0 0 auto;
+  color: #ffbe55;
+  font-weight: 650;
+}
 #hover {
   display: block;
   flex: 1 1 auto;
@@ -71,6 +83,22 @@ button:disabled, select:disabled, input:disabled { opacity: 0.42; cursor: defaul
   font: 12px/1.45 ui-monospace, SFMono-Regular, Consolas, monospace;
   color: #eee;
 }
+.legend {
+  display: inline-flex;
+  gap: 14px;
+  align-items: center;
+  font-size: 13px;
+}
+.legend > span { display: inline-flex; gap: 5px; align-items: center; }
+.swatch {
+  display: inline-block;
+  width: 0.8em;
+  height: 0.8em;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+.swatch.singular { background: #000; }
+.swatch.periodic { background: hsl(124 72% 48%); }
+.swatch.preperiodic { background: hsl(215 78% 50%); }
 
 @media (max-width: 700px) {
   label.iters { width: 100%; }

@@ -11,6 +11,7 @@ uniform int   u_colorMode;    // dropdown
 uniform vec2  u_pan;          // world pan
 uniform float u_zoom;         // world zoom (scale)
 uniform float u_time;         // optional animation
+uniform int   u_appMode;      // 0 = cells, 1 = exact rational grid
 uniform int   u_returnMode;
 uniform int   u_returnLimit;
 uniform int   u_domainLineCount;
@@ -128,6 +129,11 @@ void main() {
   vec2 aspect = vec2(u_resolution.x / u_resolution.y, 1.0);
   vec2 xy = (v_uv * 2.0 - 1.0) * aspect;     // roughly [-aspect, +aspect]
   vec2 p0 = (xy / u_zoom) + u_pan;           // world point
+
+  if (u_appMode == 1) {
+    outColor = vec4(0.035, 0.035, 0.04, 1.0);
+    return;
+  }
 
   // Only draw inside triangle; outside = transparent
   if (!pointInTri(p0, A, B, C)) {

@@ -1,6 +1,14 @@
-import { Rational } from "../src/rational.js?v=20261109-1";
-import { cellFromWord, formatInequality, lineToFloat } from "../src/cells.js?v=20261109-1";
-import { configurationMove, firstReturn, itinerary } from "../src/dynamics.js?v=20261109-1";
+import { Rational } from "../src/rational.js?v=20261112-1";
+import { cellFromWord, formatInequality, lineToFloat } from "../src/cells.js?v=20261112-1";
+import { configurationMove, firstReturn, itinerary } from "../src/dynamics.js?v=20261112-1";
+import {
+  formatRationalPoint,
+  gridPointAt,
+  integerConfigurationStep,
+  RationalOrbitClassifier,
+  rationalPointDetails,
+  symbolicOrbitText,
+} from "../src/rational_points.js?v=20261112-1";
 
 const result = document.getElementById("result");
 let assertions = 0;
@@ -69,6 +77,39 @@ try {
     "long hover words do not change the header-row height",
   );
   assertEqual(getComputedStyle(hoverFixtureText).textOverflow, "ellipsis", "long hover words use an ellipsis");
+
+  assertEqual(integerConfigurationStep(1, 4, 7).join(","), "1,3", "integer S step preserves the common denominator");
+  assertEqual(integerConfigurationStep(4, 1, 7).join(","), "2,3", "integer R step preserves the common denominator");
+  assertEqual(formatRationalPoint(4, 2, 10), "(2/5, 1/5)", "point labels reduce rational coordinates");
+  assertEqual(JSON.stringify(gridPointAt([0.401, 0.199], 5)), JSON.stringify({ x: 2, y: 1 }), "grid hit testing selects the enclosing square");
+  assertEqual(gridPointAt([0.8, 0.3], 5), null, "grid hit testing rejects points outside the simplex");
+
+  const seventhClassifier = new RationalOrbitClassifier(7);
+  const singularTrace = seventhClassifier.trace(1, 4);
+  assertEqual(singularTrace.classification.kind, "singular", "rational orbit singularity is classified exactly");
+  assertEqual(singularTrace.classification.singularSteps, 3, "steps to singularity are exact");
+  assertEqual(symbolicOrbitText(singularTrace), "SSS!", "singular symbolic orbit formatting");
+  const preperiodicTrace = seventhClassifier.trace(3, 1);
+  assertEqual(preperiodicTrace.classification.kind, "preperiodic", "strict preperiodicity is classified exactly");
+  assertEqual(preperiodicTrace.classification.preperiod, 2, "preperiod length is exact");
+  assertEqual(symbolicOrbitText(preperiodicTrace), "RR[RRS]", "preperiodic symbolic orbit formatting");
+  assert(
+    rationalPointDetails(seventhClassifier, 1, 4).includes("(1/7) × (1, 4) → (1, 3) → (1, 2) → (1, 1)!"),
+    "exact orbit details factor out the common denominator",
+  );
+  const seventhCounts = { singular: 0, periodic: 0, preperiodic: 0 };
+  for (let x = 1; x < 7; x++) {
+    for (let y = 1; x + y < 7; y++) seventhCounts[seventhClassifier.classify(x, y).kind] += 1;
+  }
+  assertEqual(seventhCounts.singular, 10, "q=7 singular-point count");
+  assertEqual(seventhCounts.periodic, 3, "q=7 periodic-point count");
+  assertEqual(seventhCounts.preperiodic, 2, "q=7 strictly pre-periodic-point count");
+
+  const fifthClassifier = new RationalOrbitClassifier(5);
+  const fixedTrace = fifthClassifier.trace(2, 1);
+  assertEqual(fixedTrace.classification.kind, "periodic", "the rational fixed point is periodic");
+  assertEqual(fixedTrace.classification.period, 1, "fixed-point period");
+  assertEqual(symbolicOrbitText(fixedTrace), "[R]", "periodic symbolic orbit formatting");
 
   result.dataset.status = "passed";
   result.textContent = `${assertions} assertions passed`;

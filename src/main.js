@@ -1,14 +1,23 @@
 // Keep this version synchronized with index.html and cells.js when deploying coupled asset changes.
-import { createGL, createProgram, loadText, resizeCanvasToDisplaySize } from "./webgl.js?v=20261109-1";
-import { wireControls } from "./controls.js?v=20261109-1";
-import { initOverlay, drawOverlay, screenToWorld } from "./overlay.js?v=20261109-1";
-import { cellDetailsText, cellFromWord, lineToFloat } from "./cells.js?v=20261109-1";
-import { firstReturn, inOpenSimplex, itinerary, pointInHalfplanes } from "./dynamics.js?v=20261109-1";
+import { createGL, createProgram, loadText, resizeCanvasToDisplaySize } from "./webgl.js?v=20261112-1";
+import { wireControls } from "./controls.js?v=20261112-1";
+import { initOverlay, drawOverlay, screenToWorld } from "./overlay.js?v=20261112-1";
+import { cellDetailsText, cellFromWord, lineToFloat } from "./cells.js?v=20261112-1";
+import { firstReturn, itinerary, pointInHalfplanes } from "./dynamics.js?v=20261112-1";
+import {
+  gridPointAt,
+  formatRationalPoint,
+  RationalOrbitClassifier,
+  rationalPointDetails,
+  symbolicOrbitText,
+} from "./rational_points.js?v=20261112-1";
 
 const MAX_DOMAIN_LINES = 128;
 
 const state = {
+  appMode: "cells",
   iters: 10,
+  denominator: 21,
   colorMode: 3,
   returnLimit: 2000,
   colorWholeWord: false,
@@ -20,6 +29,8 @@ const state = {
   lastX: 0,
   lastY: 0,
   selectedCell: null,
+  selectedPoint: null,
+  rationalClassifier: new RationalOrbitClassifier(21),
   selectedHalfplanes: [],
   selectedWordGpuLength: 0,
   history: [],
@@ -32,11 +43,22 @@ const hoverEl = document.getElementById("hover");
 const modeEl = document.getElementById("mode");
 const detailsPanel = document.getElementById("detailsPanel");
 const detailsEl = document.getElementById("cellDetails");
+const detailsHeading = document.getElementById("detailsHeading");
+const resolutionWarning = document.getElementById("resolutionWarning");
+const urlParameters = new URLSearchParams(window.location.search);
+if (urlParameters.get("mode") === "rationals") {
+  document.getElementById("appMode").value = "rationals";
+}
+const requestedDenominator = Number.parseInt(urlParameters.get("q"), 10);
+if (Number.isInteger(requestedDenominator) && requestedDenominator >= 3 && requestedDenominator <= 0x7fffffff) {
+  document.getElementById("denominatorNumber").value = String(requestedDenominator);
+  document.getElementById("denominatorRange").value = String(Math.min(200, requestedDenominator));
+}
 
 const gl = createGL(glCanvas);
 const [vertSrc, fragSrc] = await Promise.all([
-  loadText("./shaders/fullscreen.vert?v=20261109-1"),
-  loadText("./shaders/map.frag?v=20261109-1"),
+  loadText("./shaders/fullscreen.vert?v=20261112-1"),
+  loadText("./shaders/map.frag?v=20261112-1"),
 ]);
 const program = createProgram(gl, vertSrc, fragSrc);
 
@@ -47,6 +69,7 @@ const uniforms = Object.fromEntries([
   "u_pan",
   "u_zoom",
   "u_time",
+  "u_appMode",
   "u_returnMode",
   "u_returnLimit",
   "u_domainLineCount",
@@ -129,6 +152,7 @@ function renderScene(width, height, timeSeconds) {
   gl.uniform2f(uniforms.u_pan, state.panX, state.panY);
   gl.uniform1f(uniforms.u_zoom, state.zoom);
   gl.uniform1f(uniforms.u_time, timeSeconds);
+  gl.uniform1i(uniforms.u_appMode, state.appMode === "rationals" ? 1 : 0);
   gl.uniform1i(uniforms.u_returnMode, state.selectedCell ? 1 : 0);
   gl.uniform1i(uniforms.u_returnLimit, state.returnLimit);
   gl.uniform1i(uniforms.u_domainLineCount, state.selectedHalfplanes.length);
@@ -157,7 +181,9 @@ function frame(timeMs) {
   if (changed) layout();
   const animating = updateViewAnimation(timeMs);
   renderScene(glCanvas.width, glCanvas.height, timeMs * 0.001);
-  drawOverlay(overlay, state);
+  const overlayResult = drawOverlay(overlay, state);
+  resolutionWarning.hidden = !overlayResult.warning;
+  resolutionWarning.textContent = overlayResult.warning || "";
   if (animating) requestRender();
 }
 
@@ -203,13 +229,50 @@ function currentSnapshot() {
 }
 
 function refreshSelectionUi() {
+  if (state.appMode === "rationals") {
+    const selected = state.selectedPoint;
+    detailsPanel.hidden = !selected;
+    detailsHeading.textContent = selected ? "Selected rational point" : "Rational point";
+    detailsEl.textContent = selected
+      ? rationalPointDetails(state.rationalClassifier, selected.x, selected.y)
+      : "";
+    modeEl.textContent = `mode: rational points with denominator ${state.denominator}`;
+    controls.setReturnMode(false, false);
+    return;
+  }
   const selected = state.selectedCell;
   detailsPanel.hidden = !selected;
+  detailsHeading.textContent = "Selected cell";
   detailsEl.textContent = selected ? cellDetailsText(selected) : "";
   modeEl.textContent = selected
     ? `mode: first return to ${(selected.word || "ε")}`
     : "mode: fixed-depth cells";
   controls.setReturnMode(Boolean(selected), state.history.length > 0);
+}
+
+function showRationalPoint(point) {
+  if (!point) {
+    if (!state.selectedPoint) detailsPanel.hidden = true;
+    return;
+  }
+  detailsPanel.hidden = false;
+  detailsHeading.textContent = state.selectedPoint ? "Selected rational point" : "Rational point";
+  detailsEl.textContent = rationalPointDetails(state.rationalClassifier, point.x, point.y);
+}
+
+function changeAppMode() {
+  state.viewAnimation = null;
+  state.selectedPoint = null;
+  setHoverText("hover: —");
+  refreshSelectionUi();
+  requestRender();
+}
+
+function changeDenominator(q) {
+  state.rationalClassifier = new RationalOrbitClassifier(q);
+  state.selectedPoint = null;
+  setHoverText("hover: —");
+  if (state.appMode === "rationals") refreshSelectionUi();
 }
 
 function selectCell(cell, pushHistory = true) {
@@ -228,7 +291,7 @@ function restoreSnapshot(snapshot) {
 }
 
 function resetView() {
-  animateView(state.selectedCell
+  animateView(state.appMode === "cells" && state.selectedCell
     ? viewForCell(state.selectedCell)
     : { panX: 0.25, panY: 0.25, zoom: 1.0 });
 }
@@ -242,11 +305,13 @@ const controls = wireControls(state, {
   onChange: requestRender,
   onResetView: resetView,
   onBack: goBack,
+  onModeChange: changeAppMode,
+  onDenominatorChange: changeDenominator,
 });
 updateSelectedGeometry();
 refreshSelectionUi();
-const requestedCell = new URLSearchParams(window.location.search).get("cell");
-if (requestedCell !== null && /^[RS]*$/.test(requestedCell)) {
+const requestedCell = urlParameters.get("cell");
+if (state.appMode === "cells" && requestedCell !== null && /^[RS]*$/.test(requestedCell)) {
   try {
     selectCell(cellFromWord(requestedCell), false);
   } catch (error) {
@@ -255,6 +320,19 @@ if (requestedCell !== null && /^[RS]*$/.test(requestedCell)) {
 }
 
 function hoverText(point) {
+  if (state.appMode === "rationals") {
+    if (state.selectedPoint) {
+      return `selected: ${formatRationalPoint(
+        state.selectedPoint.x,
+        state.selectedPoint.y,
+        state.denominator,
+      )} (click outside the simplex to resume hover)`;
+    }
+    const gridPoint = gridPointAt(point, state.denominator);
+    if (!gridPoint) return "outside the rational grid in the open simplex";
+    const trace = state.rationalClassifier.trace(gridPoint.x, gridPoint.y);
+    return `point: ${formatRationalPoint(gridPoint.x, gridPoint.y, state.denominator)}   orbit: ${symbolicOrbitText(trace)}`;
+  }
   const coordinates = `world: (${point[0].toFixed(7)}, ${point[1].toFixed(7)})`;
   if (!state.selectedCell) {
     const result = itinerary(point, state.iters);
@@ -275,6 +353,14 @@ function setHoverText(text) {
 }
 
 function selectAt(point) {
+  if (state.appMode === "rationals") {
+    const gridPoint = gridPointAt(point, state.denominator);
+    state.selectedPoint = gridPoint;
+    refreshSelectionUi();
+    setHoverText(hoverText(point));
+    requestRender();
+    return;
+  }
   if (!state.selectedCell) {
     const result = itinerary(point, state.iters);
     if (!result) return;
@@ -312,7 +398,15 @@ glCanvas.addEventListener("mousemove", event => {
     state.viewAnimation = null;
     requestRender();
   }
-  setHoverText(hoverText(screenToWorld(glCanvas, event.clientX, event.clientY, state)));
+  const point = screenToWorld(glCanvas, event.clientX, event.clientY, state);
+  setHoverText(hoverText(point));
+  if (state.appMode === "rationals" && !state.selectedPoint) {
+    showRationalPoint(gridPointAt(point, state.denominator));
+  }
+});
+
+glCanvas.addEventListener("mouseleave", () => {
+  if (state.appMode === "rationals" && !state.selectedPoint) showRationalPoint(null);
 });
 
 window.addEventListener("mouseup", () => {
@@ -375,8 +469,18 @@ async function exportHighResPNG() {
   }
   context.putImageData(image, 0, 0);
 
+  const exportOverlay = document.createElement("canvas");
+  exportOverlay.width = W;
+  exportOverlay.height = H;
+  drawOverlay({ canvas: exportOverlay, ctx: exportOverlay.getContext("2d"), cycles: [] }, state);
+  context.drawImage(exportOverlay, 0, 0);
+
   const link = document.createElement("a");
-  const suffix = state.selectedCell ? `_return_${state.selectedCell.word || "epsilon"}` : `_N${state.iters}`;
+  const suffix = state.appMode === "rationals"
+    ? `_rationals_q${state.denominator}`
+    : state.selectedCell
+      ? `_return_${state.selectedCell.word || "epsilon"}`
+      : `_N${state.iters}`;
   link.download = `triangle-map_${W}x${H}${suffix}.png`;
   link.href = canvas.toDataURL("image/png");
   link.click();
