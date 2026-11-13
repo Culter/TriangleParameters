@@ -1,9 +1,9 @@
 // Keep this version synchronized with index.html and cells.js when deploying coupled asset changes.
-import { createGL, createProgram, loadText, resizeCanvasToDisplaySize } from "./webgl.js?v=20261112-5";
-import { wireControls } from "./controls.js?v=20261112-5";
-import { initOverlay, drawOverlay, screenToWorld } from "./overlay.js?v=20261112-5";
-import { cellDetailsText, cellFromWord, lineToFloat } from "./cells.js?v=20261112-5";
-import { firstReturn, itinerary, pointInHalfplanes } from "./dynamics.js?v=20261112-5";
+import { createGL, createProgram, loadText, resizeCanvasToDisplaySize } from "./webgl.js?v=20261112-6";
+import { wireControls } from "./controls.js?v=20261112-6";
+import { initOverlay, drawOverlay, screenToWorld } from "./overlay.js?v=20261112-6";
+import { cellDetailsText, cellFromWord, lineToFloat } from "./cells.js?v=20261112-6";
+import { firstReturn, itinerary, pointInHalfplanes } from "./dynamics.js?v=20261112-6";
 import {
   gridPointAt,
   factorizationHtml,
@@ -11,7 +11,7 @@ import {
   RationalOrbitClassifier,
   rationalPointDetails,
   symbolicOrbitText,
-} from "./rational_points.js?v=20261112-5";
+} from "./rational_points.js?v=20261112-6";
 
 const MAX_DOMAIN_LINES = 128;
 
@@ -22,8 +22,8 @@ const state = {
   colorMode: 3,
   returnLimit: 2000,
   colorWholeWord: false,
-  panX: 0.25,
-  panY: 0.25,
+  panX: 0.5,
+  panY: 0.5,
   zoom: 1.0,
   dragging: false,
   dragMoved: false,
@@ -59,8 +59,8 @@ if (Number.isInteger(requestedDenominator) && requestedDenominator >= 3 && reque
 
 const gl = createGL(glCanvas);
 const [vertSrc, fragSrc] = await Promise.all([
-  loadText("./shaders/fullscreen.vert?v=20261112-5"),
-  loadText("./shaders/map.frag?v=20261112-5"),
+  loadText("./shaders/fullscreen.vert?v=20261112-6"),
+  loadText("./shaders/map.frag?v=20261112-6"),
 ]);
 const program = createProgram(gl, vertSrc, fragSrc);
 
@@ -221,6 +221,17 @@ function viewForCell(cell) {
   };
 }
 
+function viewForSimplex(coverage = 0.95) {
+  const width = Math.max(1, glCanvas.clientWidth);
+  const height = Math.max(1, glCanvas.clientHeight);
+  const aspect = width / height;
+  return {
+    panX: 0.5,
+    panY: 0.5,
+    zoom: 2 * coverage * Math.min(1, aspect),
+  };
+}
+
 function currentSnapshot() {
   return {
     selectedCell: state.selectedCell,
@@ -298,7 +309,7 @@ function restoreSnapshot(snapshot) {
 function resetView() {
   animateView(state.appMode === "cells" && state.selectedCell
     ? viewForCell(state.selectedCell)
-    : { panX: 0.25, panY: 0.25, zoom: 1.0 });
+    : viewForSimplex());
 }
 
 function goBack() {
@@ -313,6 +324,7 @@ const controls = wireControls(state, {
   onModeChange: changeAppMode,
   onDenominatorChange: changeDenominator,
 });
+Object.assign(state, viewForSimplex());
 updateSelectedGeometry();
 refreshSelectionUi();
 const requestedCell = urlParameters.get("cell");

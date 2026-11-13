@@ -23,7 +23,7 @@ function fractionText(numerator, denominator) {
 }
 
 export function formatRationalPoint(x, y, q) {
-  return `(${fractionText(x, q)}, ${fractionText(y, q)})`;
+  return `(${fractionText(x, q)},\u00a0${fractionText(y, q)})`;
 }
 
 export function primeFactorization(value) {
@@ -46,7 +46,9 @@ export function primeFactorization(value) {
 }
 
 export function factorizationHtml(value) {
-  return primeFactorization(value)
+  const factors = primeFactorization(value);
+  if (factors.length === 1 && factors[0][1] === 1) return "prime";
+  return factors
     .map(([prime, exponent]) => exponent === 1 ? String(prime) : `${prime}<sup>${exponent}</sup>`)
     .join(" × ");
 }
@@ -226,28 +228,65 @@ export function symbolicOrbitText(trace) {
 }
 
 function pointText(point) {
-  return `(${point[0]}, ${point[1]})`;
+  return `(${point[0]},\u00a0${point[1]})`;
 }
 
-function shortenedPointList(points, maximum = 240) {
-  if (points.length <= maximum) return points.map(pointText);
-  const head = points.slice(0, maximum / 2).map(pointText);
-  const tail = points.slice(-maximum / 2).map(pointText);
-  return [...head, `… ${points.length - maximum} points omitted …`, ...tail];
+function formatPointPath(points, moves, compressShears, maximum = 240) {
+  if (points.length === 0) return "";
+  if (points.length > maximum) {
+    const retained = maximum / 2;
+    const tailStart = points.length - retained;
+    const head = formatPointPath(
+      points.slice(0, retained),
+      moves.slice(0, retained - 1),
+      compressShears,
+      Infinity,
+    );
+    const tail = formatPointPath(
+      points.slice(tailStart),
+      moves.slice(tailStart),
+      compressShears,
+      Infinity,
+    );
+    return `${head} → … ${points.length - maximum} points omitted … → ${tail}`;
+  }
+
+  let result = pointText(points[0]);
+  for (let index = 0; index < moves.length;) {
+    if (compressShears && moves[index] === "S") {
+      let end = index + 1;
+      while (end < moves.length && moves[end] === "S") end += 1;
+      result += ` ${"→".repeat(end - index)} ${pointText(points[end])}`;
+      index = end;
+    } else {
+      result += ` → ${pointText(points[index + 1])}`;
+      index += 1;
+    }
+  }
+  return result;
 }
 
 export function rationalOrbitText(trace, q) {
-  const rendered = shortenedPointList(trace.points);
+  const compressShears = trace.moves.filter(move => move === "S").length >= 7;
   if (trace.classification.kind === "singular") {
-    return `(1/${q}) × ${rendered.join(" → ")}!`;
+    return `(1/${q}) × ${formatPointPath(trace.points, trace.moves, compressShears)}!`;
   }
-  if (trace.cycleStart !== null && trace.points.length <= 240) {
-    const prefix = trace.points.slice(0, trace.cycleStart).map(pointText);
-    const cycle = trace.points.slice(trace.cycleStart).map(pointText);
-    const prefixText = prefix.length ? `${prefix.join(" → ")} → ` : "";
-    return `(1/${q}) × ${prefixText}[${cycle.join(" → ")}]`;
+  if (trace.cycleStart !== null) {
+    const cycle = formatPointPath(
+      trace.points.slice(trace.cycleStart),
+      trace.moves.slice(trace.cycleStart),
+      compressShears,
+    );
+    if (trace.cycleStart === 0) return `(1/${q}) × [${cycle}]`;
+    const prefix = formatPointPath(
+      trace.points.slice(0, trace.cycleStart),
+      trace.moves.slice(0, trace.cycleStart - 1),
+      compressShears,
+    );
+    return `(1/${q}) × ${prefix} → [${cycle}]`;
   }
-  return `(1/${q}) × ${rendered.join(" → ")}${trace.truncated ? " → …" : ""}`;
+  const rendered = formatPointPath(trace.points, trace.moves, compressShears);
+  return `(1/${q}) × ${rendered}${trace.truncated ? " → …" : ""}`;
 }
 
 export function rationalPointDetails(classifier, x, y) {

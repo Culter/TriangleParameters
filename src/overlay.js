@@ -1,4 +1,4 @@
-import { orbitColor } from "./rational_points.js?v=20261112-5";
+import { orbitColor } from "./rational_points.js?v=20261112-6";
 
 const MAX_VISIBLE_RATIONAL_SQUARES = 300_000;
 

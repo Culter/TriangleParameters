@@ -1,15 +1,16 @@
-import { Rational } from "../src/rational.js?v=20261112-5";
-import { cellFromWord, formatInequality, lineToFloat } from "../src/cells.js?v=20261112-5";
-import { configurationMove, firstReturn, itinerary } from "../src/dynamics.js?v=20261112-5";
+import { Rational } from "../src/rational.js?v=20261112-6";
+import { cellFromWord, formatInequality, lineToFloat } from "../src/cells.js?v=20261112-6";
+import { configurationMove, firstReturn, itinerary } from "../src/dynamics.js?v=20261112-6";
 import {
   factorizationHtml,
   formatRationalPoint,
   gridPointAt,
   integerConfigurationStep,
   RationalOrbitClassifier,
+  rationalOrbitText,
   rationalPointDetails,
   symbolicOrbitText,
-} from "../src/rational_points.js?v=20261112-5";
+} from "../src/rational_points.js?v=20261112-6";
 
 const result = document.getElementById("result");
 let assertions = 0;
@@ -29,6 +30,7 @@ try {
   assertEqual(half.toNumber(), 0.5, "large rationals convert without overflow");
   assertEqual(new Rational(1n, 3n).add(new Rational(1n, 6n)).toString(), "1/2", "rational addition");
   assertEqual(factorizationHtml(27), "3<sup>3</sup>", "prime-power factorization uses a superscript");
+  assertEqual(factorizationHtml(139), "prime", "a prime denominator is labeled as prime");
   assertEqual(
     factorizationHtml(175000),
     "2<sup>3</sup> × 5<sup>5</sup> × 7",
@@ -96,7 +98,7 @@ try {
 
   assertEqual(integerConfigurationStep(1, 4, 7).join(","), "1,3", "integer S step preserves the common denominator");
   assertEqual(integerConfigurationStep(4, 1, 7).join(","), "2,3", "integer R step preserves the common denominator");
-  assertEqual(formatRationalPoint(4, 2, 10), "(2/5, 1/5)", "point labels reduce rational coordinates");
+  assertEqual(formatRationalPoint(4, 2, 10), "(2/5,\u00a01/5)", "point labels reduce rational coordinates");
   assertEqual(JSON.stringify(gridPointAt([0.401, 0.199], 5)), JSON.stringify({ x: 2, y: 1 }), "grid hit testing selects the enclosing square");
   assertEqual(gridPointAt([0.8, 0.3], 5), null, "grid hit testing rejects points outside the simplex");
 
@@ -110,8 +112,31 @@ try {
   assertEqual(preperiodicTrace.classification.preperiod, 2, "preperiod length is exact");
   assertEqual(symbolicOrbitText(preperiodicTrace), "RR[RRS]", "preperiodic symbolic orbit formatting");
   assert(
-    rationalPointDetails(seventhClassifier, 1, 4).includes("(1/7) × (1, 4) → (1, 3) → (1, 2) → (1, 1)!"),
+    rationalPointDetails(seventhClassifier, 1, 4)
+      .includes("(1/7) × (1,\u00a04) → (1,\u00a03) → (1,\u00a02) → (1,\u00a01)!"),
     "exact orbit details factor out the common denominator",
+  );
+  const longShearTrace = {
+    classification: { kind: "singular" },
+    points: Array.from({ length: 8 }, (_, index) => [2, 15 - 2 * index]),
+    moves: Array(7).fill("S"),
+    cycleStart: null,
+  };
+  assertEqual(
+    rationalOrbitText(longShearTrace, 17),
+    `(1/17) × (2,\u00a015) →→→→→→→ (2,\u00a01)!`,
+    "seven represented shears suppress their intermediate points",
+  );
+  const bracketedTrace = {
+    classification: { kind: "preperiodic" },
+    points: Array.from({ length: 9 }, (_, index) => [index, index]),
+    moves: ["S", "S", "S", "S", "S", "S", "S", "R"],
+    cycleStart: 4,
+  };
+  assertEqual(
+    rationalOrbitText(bracketedTrace, 1),
+    `(1/1) × (0,\u00a00) →→→ (3,\u00a03) → [(4,\u00a04) →→→ (7,\u00a07) → (8,\u00a08)]`,
+    "shear abbreviations do not cross periodicity brackets",
   );
   const seventhCounts = { singular: 0, periodic: 0, preperiodic: 0 };
   for (let x = 1; x < 7; x++) {
