@@ -11,6 +11,10 @@ function gcdNumber(first, second) {
   return a;
 }
 
+function commonDivisor(x, y, q) {
+  return gcdNumber(gcdNumber(x, y), q);
+}
+
 function fractionText(numerator, denominator) {
   const divisor = gcdNumber(numerator, denominator);
   const n = numerator / divisor;
@@ -43,7 +47,7 @@ export function gridPointAt(point, q) {
   return isInteriorGridPoint(x, y, q) ? { x, y } : null;
 }
 
-function cachedSuccessorInfo(info) {
+function cachedSuccessorInfo(info, item, q) {
   if (info.kind === "unresolved") return info;
   if (info.kind === "singular") {
     return { kind: "singular", singularSteps: info.singularSteps + 1 };
@@ -53,6 +57,7 @@ function cachedSuccessorInfo(info) {
     preperiod: info.preperiod + 1,
     period: info.period,
     distinctShears: info.distinctShears,
+    eventualGcd: Math.max(commonDivisor(item.x, item.y, q), info.eventualGcd),
   };
 }
 
@@ -84,7 +89,7 @@ export class RationalOrbitClassifier {
       if (cached) {
         let next = cached;
         for (let index = path.length - 1; index >= 0; index--) {
-          next = cachedSuccessorInfo(next);
+          next = cachedSuccessorInfo(next, path[index], this.q);
           this.cache.set(path[index].key, next);
         }
         return this.cache.get(initialKey);
@@ -106,11 +111,16 @@ export class RationalOrbitClassifier {
         const shearValues = new Set(
           cycle.filter(item => item.move === "S").map(item => item.x),
         );
+        const eventualGcd = cycle.reduce(
+          (value, item) => Math.max(value, commonDivisor(item.x, item.y, this.q)),
+          1,
+        );
         const periodicInfo = {
           kind: "periodic",
           preperiod: 0,
           period: cycle.length,
           distinctShears: shearValues.size,
+          eventualGcd,
         };
         for (const item of cycle) this.cache.set(item.key, periodicInfo);
 
@@ -121,6 +131,10 @@ export class RationalOrbitClassifier {
             preperiod: next.preperiod + 1,
             period: cycle.length,
             distinctShears: shearValues.size,
+            eventualGcd: Math.max(
+              commonDivisor(path[index].x, path[index].y, this.q),
+              next.eventualGcd,
+            ),
           };
           this.cache.set(path[index].key, next);
         }
@@ -225,6 +239,7 @@ export function rationalPointDetails(classifier, x, y) {
     lines.push(`preperiod: ${info.preperiod}`);
     lines.push(`period: ${info.period}`);
     lines.push(`distinct shear values on cycle: ${info.distinctShears}`);
+    lines.push(`eventual gcd(x, y, q): ${info.eventualGcd}`);
   } else {
     lines.push(`classification stopped after: ${info.steps} steps`);
   }
@@ -238,12 +253,14 @@ export function orbitColor(info) {
   const periodScale = Math.min(1, Math.log2(info.period + 1) / 8);
   const shearShift = (info.distinctShears * 17) % 24;
   if (info.kind === "periodic") {
-    const hue = 112 + shearShift;
+    const hue = info.eventualGcd > 1 ? 42 + shearShift * 0.45 : 112 + shearShift;
     const lightness = 58 - 20 * periodScale;
-    return `hsl(${hue} 72% ${lightness}%)`;
+    const saturation = info.eventualGcd > 1 ? 48 : 72;
+    return `hsl(${hue} ${saturation}% ${lightness}%)`;
   }
   const preperiodScale = Math.min(1, Math.log2(info.preperiod + 1) / 8);
-  const hue = 207 + shearShift * 0.55;
+  const hue = info.eventualGcd > 1 ? 278 + shearShift * 0.35 : 207 + shearShift * 0.55;
   const lightness = 62 - 17 * periodScale - 10 * preperiodScale;
-  return `hsl(${hue} 78% ${lightness}%)`;
+  const saturation = info.eventualGcd > 1 ? 50 : 78;
+  return `hsl(${hue} ${saturation}% ${lightness}%)`;
 }

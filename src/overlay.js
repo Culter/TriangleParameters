@@ -1,4 +1,4 @@
-import { orbitColor } from "./rational_points.js?v=20261112-1";
+import { orbitColor } from "./rational_points.js?v=20261112-3";
 
 const MAX_VISIBLE_RATIONAL_SQUARES = 300_000;
 
@@ -74,6 +74,31 @@ function drawRationalGrid(overlay, state) {
         lowerLeft[1] - upperRight[1] + 0.15,
       );
     }
+  }
+
+  if (state.selectedPoint && state.selectedOrbitPoints.length > 1) {
+    const selectedKey = `${state.selectedPoint.x},${state.selectedPoint.y}`;
+    const outlined = new Set();
+    ctx.save();
+    ctx.strokeStyle = "rgba(255, 218, 112, 0.72)";
+    ctx.lineWidth = Math.max(1, Math.min(3, squareSizePixels * 0.07));
+    for (const point of state.selectedOrbitPoints) {
+      const [x, y] = point;
+      const key = `${x},${y}`;
+      if (key === selectedKey || outlined.has(key)) continue;
+      outlined.add(key);
+      if (x < visible.minimumX || x > visible.maximumX ||
+          y < visible.minimumY || y > visible.viewportMaximumY) continue;
+      const lowerLeft = worldToScreen([(x - 0.5) / q, (y - 0.5) / q], canvas, state);
+      const upperRight = worldToScreen([(x + 0.5) / q, (y + 0.5) / q], canvas, state);
+      ctx.strokeRect(
+        lowerLeft[0],
+        upperRight[1],
+        upperRight[0] - lowerLeft[0],
+        lowerLeft[1] - upperRight[1],
+      );
+    }
+    ctx.restore();
   }
 
   if (state.selectedPoint) {

@@ -1,16 +1,16 @@
 // Keep this version synchronized with index.html and cells.js when deploying coupled asset changes.
-import { createGL, createProgram, loadText, resizeCanvasToDisplaySize } from "./webgl.js?v=20261112-1";
-import { wireControls } from "./controls.js?v=20261112-1";
-import { initOverlay, drawOverlay, screenToWorld } from "./overlay.js?v=20261112-1";
-import { cellDetailsText, cellFromWord, lineToFloat } from "./cells.js?v=20261112-1";
-import { firstReturn, itinerary, pointInHalfplanes } from "./dynamics.js?v=20261112-1";
+import { createGL, createProgram, loadText, resizeCanvasToDisplaySize } from "./webgl.js?v=20261112-3";
+import { wireControls } from "./controls.js?v=20261112-3";
+import { initOverlay, drawOverlay, screenToWorld } from "./overlay.js?v=20261112-3";
+import { cellDetailsText, cellFromWord, lineToFloat } from "./cells.js?v=20261112-3";
+import { firstReturn, itinerary, pointInHalfplanes } from "./dynamics.js?v=20261112-3";
 import {
   gridPointAt,
   formatRationalPoint,
   RationalOrbitClassifier,
   rationalPointDetails,
   symbolicOrbitText,
-} from "./rational_points.js?v=20261112-1";
+} from "./rational_points.js?v=20261112-3";
 
 const MAX_DOMAIN_LINES = 128;
 
@@ -30,6 +30,7 @@ const state = {
   lastY: 0,
   selectedCell: null,
   selectedPoint: null,
+  selectedOrbitPoints: [],
   rationalClassifier: new RationalOrbitClassifier(21),
   selectedHalfplanes: [],
   selectedWordGpuLength: 0,
@@ -57,8 +58,8 @@ if (Number.isInteger(requestedDenominator) && requestedDenominator >= 3 && reque
 
 const gl = createGL(glCanvas);
 const [vertSrc, fragSrc] = await Promise.all([
-  loadText("./shaders/fullscreen.vert?v=20261112-1"),
-  loadText("./shaders/map.frag?v=20261112-1"),
+  loadText("./shaders/fullscreen.vert?v=20261112-3"),
+  loadText("./shaders/map.frag?v=20261112-3"),
 ]);
 const program = createProgram(gl, vertSrc, fragSrc);
 
@@ -263,6 +264,7 @@ function showRationalPoint(point) {
 function changeAppMode() {
   state.viewAnimation = null;
   state.selectedPoint = null;
+  state.selectedOrbitPoints = [];
   setHoverText("hover: —");
   refreshSelectionUi();
   requestRender();
@@ -271,6 +273,7 @@ function changeAppMode() {
 function changeDenominator(q) {
   state.rationalClassifier = new RationalOrbitClassifier(q);
   state.selectedPoint = null;
+  state.selectedOrbitPoints = [];
   setHoverText("hover: —");
   if (state.appMode === "rationals") refreshSelectionUi();
 }
@@ -354,8 +357,15 @@ function setHoverText(text) {
 
 function selectAt(point) {
   if (state.appMode === "rationals") {
-    const gridPoint = gridPointAt(point, state.denominator);
+    let gridPoint = gridPointAt(point, state.denominator);
+    if (gridPoint && state.selectedPoint &&
+        gridPoint.x === state.selectedPoint.x && gridPoint.y === state.selectedPoint.y) {
+      gridPoint = null;
+    }
     state.selectedPoint = gridPoint;
+    state.selectedOrbitPoints = gridPoint
+      ? state.rationalClassifier.trace(gridPoint.x, gridPoint.y).points
+      : [];
     refreshSelectionUi();
     setHoverText(hoverText(point));
     requestRender();

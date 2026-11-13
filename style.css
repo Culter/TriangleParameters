@@ -90,6 +90,7 @@ button:disabled, select:disabled, input:disabled { opacity: 0.42; cursor: defaul
   font-size: 13px;
 }
 .legend > span { display: inline-flex; gap: 5px; align-items: center; }
+.legendNote { color: #aaa; font-size: 12px; }
 .swatch {
   display: inline-block;
   width: 0.8em;

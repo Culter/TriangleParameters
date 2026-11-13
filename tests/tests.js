@@ -1,6 +1,6 @@
-import { Rational } from "../src/rational.js?v=20261112-1";
-import { cellFromWord, formatInequality, lineToFloat } from "../src/cells.js?v=20261112-1";
-import { configurationMove, firstReturn, itinerary } from "../src/dynamics.js?v=20261112-1";
+import { Rational } from "../src/rational.js?v=20261112-3";
+import { cellFromWord, formatInequality, lineToFloat } from "../src/cells.js?v=20261112-3";
+import { configurationMove, firstReturn, itinerary } from "../src/dynamics.js?v=20261112-3";
 import {
   formatRationalPoint,
   gridPointAt,
@@ -8,7 +8,7 @@ import {
   RationalOrbitClassifier,
   rationalPointDetails,
   symbolicOrbitText,
-} from "../src/rational_points.js?v=20261112-1";
+} from "../src/rational_points.js?v=20261112-3";
 
 const result = document.getElementById("result");
 let assertions = 0;
@@ -109,7 +109,33 @@ try {
   const fixedTrace = fifthClassifier.trace(2, 1);
   assertEqual(fixedTrace.classification.kind, "periodic", "the rational fixed point is periodic");
   assertEqual(fixedTrace.classification.period, 1, "fixed-point period");
+  assertEqual(fixedTrace.classification.eventualGcd, 1, "primitive fixed point stays primitive");
   assertEqual(symbolicOrbitText(fixedTrace), "[R]", "periodic symbolic orbit formatting");
+
+  const tenthClassifier = new RationalOrbitClassifier(10);
+  assertEqual(
+    tenthClassifier.classify(4, 2).eventualGcd,
+    2,
+    "the eventual gcd of a visibly unreduced periodic point is exact",
+  );
+  const fourteenthClassifier = new RationalOrbitClassifier(14);
+  const eventuallyReducible = fourteenthClassifier.classify(5, 3);
+  assertEqual(eventuallyReducible.kind, "preperiodic", "eventual-reduction test point is pre-periodic");
+  assertEqual(
+    eventuallyReducible.eventualGcd,
+    2,
+    "the eventual gcd detects a common divisor gained by a later iterate",
+  );
+  assertEqual(
+    new RationalOrbitClassifier(20).classify(8, 4).eventualGcd,
+    4,
+    "eventual gcd reports values greater than two",
+  );
+  assert(
+    rationalPointDetails(new RationalOrbitClassifier(20), 8, 4)
+      .includes("eventual gcd(x, y, q): 4"),
+    "point details print the exact eventual gcd",
+  );
 
   result.dataset.status = "passed";
   result.textContent = `${assertions} assertions passed`;
