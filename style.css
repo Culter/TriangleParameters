@@ -45,7 +45,17 @@ button:hover { border-color: #666; cursor: pointer; }
 button:disabled, select:disabled, input:disabled { opacity: 0.42; cursor: default; }
 [hidden] { display: none !important; }
 
-#mode { flex: 0 0 auto; color: #f3cf61; }
+#mode {
+  flex: 0 0 auto;
+  height: 1.5em;
+  line-height: 1.5em;
+  color: #f3cf61;
+  white-space: nowrap;
+}
+#mode sup {
+  line-height: 0;
+  font-size: 0.75em;
+}
 .warning {
   flex: 0 0 auto;
   color: #ffbe55;
@@ -90,7 +100,6 @@ button:disabled, select:disabled, input:disabled { opacity: 0.42; cursor: defaul
   font-size: 13px;
 }
 .legend > span { display: inline-flex; gap: 5px; align-items: center; }
-.legendNote { color: #aaa; font-size: 12px; }
 .swatch {
   display: inline-block;
   width: 0.8em;
@@ -100,6 +109,8 @@ button:disabled, select:disabled, input:disabled { opacity: 0.42; cursor: defaul
 .swatch.singular { background: #000; }
 .swatch.periodic { background: hsl(124 72% 48%); }
 .swatch.preperiodic { background: hsl(215 78% 50%); }
+.swatch.periodicNonprimitive { background: hsl(50 48% 48%); }
+.swatch.preperiodicNonprimitive { background: hsl(285 50% 46%); }
 
 @media (max-width: 700px) {
   label.iters { width: 100%; }

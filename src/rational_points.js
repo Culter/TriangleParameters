@@ -26,6 +26,31 @@ export function formatRationalPoint(x, y, q) {
   return `(${fractionText(x, q)}, ${fractionText(y, q)})`;
 }
 
+export function primeFactorization(value) {
+  if (!Number.isInteger(value) || value < 2 || value > 0x7fffffff) {
+    throw new RangeError("Factorization requires an integer from 2 through 2^31 - 1");
+  }
+  const factors = [];
+  let remainder = value;
+  for (let prime = 2; prime * prime <= remainder; prime += prime === 2 ? 1 : 2) {
+    if (remainder % prime !== 0) continue;
+    let exponent = 0;
+    while (remainder % prime === 0) {
+      remainder /= prime;
+      exponent += 1;
+    }
+    factors.push([prime, exponent]);
+  }
+  if (remainder > 1) factors.push([remainder, 1]);
+  return factors;
+}
+
+export function factorizationHtml(value) {
+  return primeFactorization(value)
+    .map(([prime, exponent]) => exponent === 1 ? String(prime) : `${prime}<sup>${exponent}</sup>`)
+    .join(" × ");
+}
+
 export function integerConfigurationMove(x, y) {
   if (x === y) return null;
   return y > x ? "S" : "R";

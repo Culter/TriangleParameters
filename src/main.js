@@ -1,16 +1,17 @@
 // Keep this version synchronized with index.html and cells.js when deploying coupled asset changes.
-import { createGL, createProgram, loadText, resizeCanvasToDisplaySize } from "./webgl.js?v=20261112-3";
-import { wireControls } from "./controls.js?v=20261112-3";
-import { initOverlay, drawOverlay, screenToWorld } from "./overlay.js?v=20261112-3";
-import { cellDetailsText, cellFromWord, lineToFloat } from "./cells.js?v=20261112-3";
-import { firstReturn, itinerary, pointInHalfplanes } from "./dynamics.js?v=20261112-3";
+import { createGL, createProgram, loadText, resizeCanvasToDisplaySize } from "./webgl.js?v=20261112-5";
+import { wireControls } from "./controls.js?v=20261112-5";
+import { initOverlay, drawOverlay, screenToWorld } from "./overlay.js?v=20261112-5";
+import { cellDetailsText, cellFromWord, lineToFloat } from "./cells.js?v=20261112-5";
+import { firstReturn, itinerary, pointInHalfplanes } from "./dynamics.js?v=20261112-5";
 import {
   gridPointAt,
+  factorizationHtml,
   formatRationalPoint,
   RationalOrbitClassifier,
   rationalPointDetails,
   symbolicOrbitText,
-} from "./rational_points.js?v=20261112-3";
+} from "./rational_points.js?v=20261112-5";
 
 const MAX_DOMAIN_LINES = 128;
 
@@ -58,8 +59,8 @@ if (Number.isInteger(requestedDenominator) && requestedDenominator >= 3 && reque
 
 const gl = createGL(glCanvas);
 const [vertSrc, fragSrc] = await Promise.all([
-  loadText("./shaders/fullscreen.vert?v=20261112-3"),
-  loadText("./shaders/map.frag?v=20261112-3"),
+  loadText("./shaders/fullscreen.vert?v=20261112-5"),
+  loadText("./shaders/map.frag?v=20261112-5"),
 ]);
 const program = createProgram(gl, vertSrc, fragSrc);
 
@@ -237,7 +238,8 @@ function refreshSelectionUi() {
     detailsEl.textContent = selected
       ? rationalPointDetails(state.rationalClassifier, selected.x, selected.y)
       : "";
-    modeEl.textContent = `mode: rational points with denominator ${state.denominator}`;
+    modeEl.innerHTML =
+      `mode: rational points with denominator ${state.denominator} = ${factorizationHtml(state.denominator)}`;
     controls.setReturnMode(false, false);
     return;
   }

@@ -1,14 +1,15 @@
-import { Rational } from "../src/rational.js?v=20261112-3";
-import { cellFromWord, formatInequality, lineToFloat } from "../src/cells.js?v=20261112-3";
-import { configurationMove, firstReturn, itinerary } from "../src/dynamics.js?v=20261112-3";
+import { Rational } from "../src/rational.js?v=20261112-5";
+import { cellFromWord, formatInequality, lineToFloat } from "../src/cells.js?v=20261112-5";
+import { configurationMove, firstReturn, itinerary } from "../src/dynamics.js?v=20261112-5";
 import {
+  factorizationHtml,
   formatRationalPoint,
   gridPointAt,
   integerConfigurationStep,
   RationalOrbitClassifier,
   rationalPointDetails,
   symbolicOrbitText,
-} from "../src/rational_points.js?v=20261112-3";
+} from "../src/rational_points.js?v=20261112-5";
 
 const result = document.getElementById("result");
 let assertions = 0;
@@ -27,6 +28,12 @@ try {
   assertEqual(half.toString(), "1/2", "rationals normalize exactly");
   assertEqual(half.toNumber(), 0.5, "large rationals convert without overflow");
   assertEqual(new Rational(1n, 3n).add(new Rational(1n, 6n)).toString(), "1/2", "rational addition");
+  assertEqual(factorizationHtml(27), "3<sup>3</sup>", "prime-power factorization uses a superscript");
+  assertEqual(
+    factorizationHtml(175000),
+    "2<sup>3</sup> × 5<sup>5</sup> × 7",
+    "factorization separates distinct primes with multiplication signs",
+  );
 
   const simplex = cellFromWord("");
   assertEqual(simplex.area.toString(), "1/2", "simplex area");
@@ -77,6 +84,15 @@ try {
     "long hover words do not change the header-row height",
   );
   assertEqual(getComputedStyle(hoverFixtureText).textOverflow, "ellipsis", "long hover words use an ellipsis");
+  const modeFixtureText = hoverFixture.querySelector("#mode");
+  modeFixtureText.innerHTML = "mode: denominator 27 = 3<sup>3</sup>";
+  const primePowerHeight = hoverFixture.getBoundingClientRect().height;
+  modeFixtureText.textContent = "mode: denominator 30 = 2 × 3 × 5";
+  assertEqual(
+    hoverFixture.getBoundingClientRect().height,
+    primePowerHeight,
+    "factorization superscripts do not change the status-row height",
+  );
 
   assertEqual(integerConfigurationStep(1, 4, 7).join(","), "1,3", "integer S step preserves the common denominator");
   assertEqual(integerConfigurationStep(4, 1, 7).join(","), "2,3", "integer R step preserves the common denominator");
